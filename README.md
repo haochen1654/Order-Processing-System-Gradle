@@ -11,16 +11,11 @@ A high-performance Java simulation designed to model a kitchen's order placement
 
 ## Prerequisites
 * **Java 17** or higher
-* **Maven** (for dependency management)
+* **Gradle** (for dependency management)
 * **Curl** (for API submission)
 
 ## Installation & Setup
-1. Clone the repository:
-    ```bash
-   git clone https://github.com/haochen1654/Order-Processing-System.git
-   cd Order-Processing-System
-
-2. Build the project:
+Build the project:
     ```bash
     gradle build
 ## How to run
