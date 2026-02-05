@@ -14,7 +14,10 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import simplehttp.*;
+import simplehttp.HttpClient;
+import simplehttp.HttpClients;
+import simplehttp.HttpResponse;
+import simplehttp.UnencodedStringMessage;
 
 /** Client is a client for fetching and solving challenge test problems. */
 public class Client {
