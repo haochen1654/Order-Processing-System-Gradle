@@ -1,0 +1,60 @@
+package com.css.challenge;
+
+import static com.css.challenge.utils.Utils.buildAction;
+import static com.css.challenge.utils.Utils.currentTimestampMicros;
+
+import com.css.challenge.constants.Constants.ActionType;
+import com.css.challenge.ledger.Action;
+import com.css.challenge.ledger.ActionLedger;
+import com.css.challenge.ledger.ActionLog;
+import com.css.challenge.models.Options;
+import com.css.challenge.models.Order;
+import com.css.challenge.models.StoredOrder;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+public class OrderProcessingService {
+  private final StorageManager storageManager = new StorageManager();
+  private final ActionLedger ledger = new ActionLedger();
+  private final ConcurrentMap<String, StoredOrder> indexOfOrder =
+      new ConcurrentHashMap<>();
+
+  public void placeOrder(Order order) throws Exception {
+    StoredOrder storedOrder = StoredOrder.builder()
+                                  .order(order)
+                                  .storedAtMicros(currentTimestampMicros())
+                                  .build();
+
+    storageManager.place(storedOrder, ledger);
+    indexOfOrder.put(order.getId(), storedOrder);
+  }
+
+  public void pickupOrder(String orderId) throws Exception {
+    StoredOrder storedOrder = indexOfOrder.remove(orderId);
+    if (storedOrder == null)
+      return;
+
+    if (storedOrder.isExpired(currentTimestampMicros())) {
+      storageManager.remove(storedOrder);
+      ledger.record(buildAction(storedOrder,
+                                /* target= */ storedOrder.getStorageType(),
+                                /* action= */ ActionType.DISCARD));
+      return;
+    }
+
+    storageManager.remove(storedOrder);
+    ledger.record(buildAction(storedOrder,
+                              /* target= */ storedOrder.getStorageType(),
+                              /* action= */ ActionType.PICKUP));
+  }
+
+  public ActionLog generateLogReport(Options options) {
+    return ActionLog.builder()
+        .options(options)
+        .actions(ledger.snapshot())
+        .build();
+  }
+
+  public List<Action> getActions() { return ledger.snapshot(); }
+}
