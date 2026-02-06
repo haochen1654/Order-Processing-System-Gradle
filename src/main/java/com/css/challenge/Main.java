@@ -81,6 +81,7 @@ public class Main implements Runnable {
     ScheduledExecutorService placer =
         Executors.newSingleThreadScheduledExecutor();
     ScheduledExecutorService pickupper = Executors.newScheduledThreadPool(4);
+    // Use CountDownLatch to wait for all orders to be processed if needed
     CountDownLatch latch = new CountDownLatch(orders.size());
 
     System.out.println("Starting simulation for " + orders.size() +
@@ -88,8 +89,8 @@ public class Main implements Runnable {
 
     for (int i = 0; i < orders.size(); i++) {
       Order order = orders.get(i);
+      // Calculate a unique delay for each order to create a staggered rate
       long startDelay = (long)(i + 1) * rate.toMillis() * 1_000L;
-
       placer.schedule(()
                           -> placeAndSchedulePickup(order, service, pickupper,
                                                     latch, min, max),
@@ -110,7 +111,7 @@ public class Main implements Runnable {
                                              Duration max) {
     try {
       service.placeOrder(order);
-
+      // Now schedule the pickup relative to placement time
       int pickupDelay = ThreadLocalRandom.current().nextInt(
           (int)(min.toMillis() * 1_000L), (int)(max.toMillis() * 1_000L));
       pickupper.schedule(() -> {
@@ -119,13 +120,15 @@ public class Main implements Runnable {
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
-          latch.countDown(); // Prevent hang on failure
+          // Countdown the latch when pickup is done
+          latch.countDown();
         }
       }, pickupDelay, TimeUnit.MICROSECONDS);
 
     } catch (Exception e) {
       e.printStackTrace();
-      latch.countDown(); // Prevent hang on failure
+      // If placement fails, still countdown the latch otherwise it will hang
+      latch.countDown();
     }
   }
 
