@@ -27,6 +27,10 @@ replay_pid*
 /target/
 .gradle/
 build/
+bin
 
 # VS Code files
 .vscode/
+
+# index files
+.DS_Store
